@@ -2,7 +2,7 @@
 
 A serverless, containerized music recommendation system that fetches your recently played Spotify tracks, recommends similar songs using audio features, and updates your playlist — all on a scheduled basis.
 
-## 🚀 Tech Stack
+## Tech Stack
 
 - **Spotify Web API**
 - **AWS Lambda (containerized)**
@@ -12,7 +12,7 @@ A serverless, containerized music recommendation system that fetches your recent
 - **SNS** for alerts
 - **Docker** for packaging
 
-## 🔁 What It Does
+## What It Does
 
 1. Authenticates to Spotify and gets recently played tracks.
 2. Matches them to stored metadata in Snowflake.
@@ -20,7 +20,7 @@ A serverless, containerized music recommendation system that fetches your recent
 4. Updates your chosen Spotify playlist with recommendations.
 5. Sends an email notification via SNS upon completion.
 
-## 📦 Project Structure
+## Project Structure
 
 ```bash
 .
