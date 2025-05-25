@@ -1,0 +1,7 @@
+spotipy
+snowflake-connector-python
+python-dotenv
+pandas
+numpy
+scikit-learn
+boto3
