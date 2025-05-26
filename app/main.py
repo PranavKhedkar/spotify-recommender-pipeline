@@ -1,16 +1,15 @@
 import logging
 import os
-# import json
-# import pandas as pd
 
 
-# Set up logging
+# Logging
 logging.basicConfig(level=logging.INFO)
-print("🌍 Container initialized")
+print("Container initialized")
 def lambda_handler(event, context):
-    import boto3
+    logging.info("Lambda handler started")
     
-    print("🚀 Lambda handler started")
+    # Import necessary modules
+    import boto3
     from spotify_utils import (
         get_access_token,
         spotpy_authenticate,
@@ -20,25 +19,25 @@ def lambda_handler(event, context):
     )
 
     from recommender_utils import match_recent_tracks, generate_recommendations_for_matched
-
     from snowflake_utils import connect_to_snowflake
+
 
     try:
         logging.info("Lambda started: Fetch, match, recommend, and update playlist")
 
-        # Step 1: Spotify auth
+        # Spotify auth
         access_token = get_access_token()
         sp = spotpy_authenticate()
         user_id = sp.me()['id']
         logging.info(f"Spotify user ID: {user_id}")
 
-        # Step 2: Fetch recent tracks
+        # Fetch recent tracks
         recent_tracks = get_recent_tracks_from_spotify(access_token)
         if not recent_tracks:
             logging.warning("No recent tracks found.")
             return {'statusCode': 200, 'body': 'No recent tracks found'}
 
-        # Step 3: Connect to Snowflake and match
+        # Connect to Snowflake and match
         conn = connect_to_snowflake()
         matched_tracks = match_recent_tracks(recent_tracks, conn)
         if not matched_tracks:
@@ -46,7 +45,7 @@ def lambda_handler(event, context):
             conn.close()
             return {'statusCode': 200, 'body': 'No matched tracks found'}
 
-        # Step 4: Generate recommendations
+        # Generate recommendations
         all_recommendations = generate_recommendations_for_matched(matched_tracks, conn)
         conn.close()
 
@@ -54,7 +53,7 @@ def lambda_handler(event, context):
             logging.warning("No recommendations generated.")
             return {'statusCode': 200, 'body': 'No recommendations generated'}
 
-        # Step 5: Search Spotify for track IDs
+        # Search Spotify for track IDs
         recommended_track_names = [
             name for df in all_recommendations for name in df['TRACK_NAME'].tolist()
         ]
@@ -71,19 +70,22 @@ def lambda_handler(event, context):
             logging.warning("No valid Spotify track IDs found.")
             return {'statusCode': 200, 'body': 'No valid Spotify track IDs found'}
 
-        # Step 6: Update Spotify playlist
+        # Update Spotify playlist
         playlist_id = os.getenv("SPOTIFY_PLAYLIST_ID")
         if not playlist_id:
             logging.error("Missing SPOTIFY_PLAYLIST_ID in environment variables")
             return {'statusCode': 500, 'body': 'Missing playlist ID'}
 
+        # Clear existing tracks in the playlist
         clear_playlist(sp, playlist_id)
+
+        # Add new recommended tracks to the playlist
         add_tracks_to_playlist(sp, playlist_id, recommended_track_ids)
 
         logging.info(f"Updated playlist with {len(recommended_track_ids)} tracks.")
 
+        # Send success notification via SNS
         sns = boto3.client('sns')
-
         SNS_TOPIC_ARN = os.environ.get('SNS_TOPIC_ARN')
 
         sns.publish(
@@ -97,10 +99,4 @@ def lambda_handler(event, context):
     except Exception as e:
         logging.exception("Unhandled error in unified Lambda")
         return {'statusCode': 500, 'body': str(e)}
-    
-# if __name__ == "__main__":
-#     fake_event = {}  # you can add dummy event data here if you want
-#     fake_context = None  # context is usually not needed unless you need timeout info etc.
-#     response = lambda_handler(fake_event, fake_context)
-#     print(response)
     
