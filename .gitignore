@@ -36,7 +36,7 @@ build/
 
 # Cache and logs
 *.log
-.cache/
+**/.cache/
 __pycache__/
 
 # AWS Lambda build artifacts
