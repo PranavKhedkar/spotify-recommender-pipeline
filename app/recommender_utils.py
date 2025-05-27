@@ -3,12 +3,18 @@ import numpy as np
 import logging
 from sklearn.metrics.pairwise import cosine_similarity
 
-# Set up logging
+# Logging
 logging.basicConfig(level=logging.INFO)
 
 def get_all_songs(conn):
     """
     Fetch all songs from Kaggle table.
+
+    Args:
+        conn: Snowflake connection.
+
+    Returns:
+        DataFrame: DataFrame containing all songs with their features.
     """
     query = """
         SELECT TRACK_NAME, ARTIST_NAME, DANCEABILITY, ENERGY, KEY, 
@@ -127,17 +133,4 @@ def generate_recommendations_for_matched(matched_tracks, conn):
     logging.info(f"Generated recommendations for {len(recommendations)} songs.")
     return recommendations
 
-from spotify_utils import get_access_token, get_recent_tracks_from_spotify, spotpy_authenticate
-from snowflake_utils import connect_to_snowflake
 
-# # Optional if you want to run as script manually
-# if __name__ == "__main__":
-#     # from your_snowflake_connector import connect_to_snowflake  # Update accordingly
-#     conn = connect_to_snowflake()
-    
-#     recent_tracks_from_spotify = get_recent_tracks_from_spotify(get_access_token())
-#     # Assume you have 'recent_tracks_from_spotify' already fetched
-#     matched_tracks = match_recent_tracks(recent_tracks_from_spotify, conn)
-#     recommendations = generate_recommendations_for_matched(matched_tracks, conn)
-    
-#     conn.close()

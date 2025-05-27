@@ -3,9 +3,6 @@ from dotenv import load_dotenv
 import snowflake.connector
 from time import sleep
 
-# Load environment variables from the .env file
-load_dotenv(override=True)
-
 # Access the environment variables
 account = os.getenv("SNOWFLAKE_ACCOUNT")
 user = os.getenv("SNOWFLAKE_USER")
@@ -15,7 +12,17 @@ warehouse = os.getenv("SNOWFLAKE_WAREHOUSE")
 database = os.getenv("SNOWFLAKE_DATABASE")
 schema = os.getenv("SNOWFLAKE_SCHEMA")
 
+
 def connect_to_snowflake():
+    """
+    Connect to snowflake.
+
+    Args:
+        None
+
+    Returns:
+        conn: Snowflake connection object
+    """
     try:
         conn = snowflake.connector.connect(
             account = account,
