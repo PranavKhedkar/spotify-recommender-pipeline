@@ -33,7 +33,7 @@ A serverless, containerized music recommendation system that fetches your recent
 ├── README.md
 ```
 
-## ⚙️ Environment Variables
+## Environment Variables
 
 These should be configured in the Lambda environment or a `.env` file for local testing:
 
