@@ -18,9 +18,9 @@ This system runs as a containerized AWS Lambda function that:
 
 ## Architecture
 
-![Architecture Diagram](assests\architecture.png)
+![Architecture Diagram](assests/architecture.png)
 
-![Data Flow](assests\Dataflow.svg)
+![Data Flow](assests/Dataflow.svg)
 
 The system uses:
 - **AWS Lambda** (containerized) for the application runtime
