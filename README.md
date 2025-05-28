@@ -1,84 +1,119 @@
-# 🎵 Spotify Recommender Pipeline (AWS + Docker)
+# 🎵 Spotify Recommender System
 
-A serverless, containerized music recommendation system that fetches your recently played Spotify tracks, recommends similar songs using audio features, and updates your playlist — all on a scheduled basis.
+A serverless AWS Lambda application that automatically updates your Spotify playlists with personalized music recommendations based on your listening history.
 
-## Tech Stack
+![Spotify + AWS](https://img.shields.io/badge/Spotify-AWS-brightgreen)
+![Python 3.11](https://img.shields.io/badge/Python-3.11-blue)
+![Docker](https://img.shields.io/badge/Docker-Enabled-blue)
 
-* **Spotify Web API**
-* **AWS Lambda (container image)**
-* **Snowflake** for feature storage & querying
-* **EventBridge** for scheduling
-* **SNS** for alerts
-* **Docker** for packaging
+## Overview
 
-## What It Does
+This system runs as a containerized AWS Lambda function that:
 
-1. Authenticates with Spotify to fetch recently played tracks.
-2. Matches tracks with metadata stored in Snowflake.
-3. Recommends similar tracks using audio features.
-4. Updates a specified Spotify playlist with recommended tracks.
-5. Sends an SNS email notification upon successful run.
+1. Fetches your recently played tracks from Spotify
+2. Matches them with a database of song features in Snowflake
+3. Generates recommendations using audio feature similarity
+4. Updates a designated Spotify playlist with these recommendations
+5. Sends you a notification when complete
+
+## Architecture
+
+![Architecture Diagram](Spotify-recommeder\assests\architecture.png)
+
+![Data Flow](Spotify-recommeder\assests\Dataflow.svg)
+
+The system uses:
+- **AWS Lambda** (containerized) for the application runtime
+- **AWS EventBridge** for scheduled execution
+- **AWS SNS** for notifications
+- **Snowflake** for storing track features and metadata
+- **Spotify Web API** for user data and playlist management
 
 ## Project Structure
 
-```bash
+```
 .
-├── Dockerfile
-├── requirements.txt
 ├── app/
-│   ├── main.py
-│   ├── spotify_utils.py
-│   ├── recommender_utils.py
-│   └── snowflake_utils.py
-├── README.md
+│   ├── main.py              # Lambda handler
+│   ├── spotify_utils.py     # Spotify API interactions
+│   ├── recommender_utils.py # Recommendation engine
+│   └── snowflake_utils.py   # Database connections
+├── Dockerfile               # Container definition
+├── requirements.txt         # Python dependencies
+├── architecture_diagram.md  # System architecture visualization
+└── README.md               
 ```
 
-## Environment Variables
+## Setup Instructions
 
-These should be configured in the Lambda environment or a `.env` file for local testing:
+### Prerequisites
 
-```env
+- AWS account with permissions to create Lambda, EventBridge, and SNS resources
+- Spotify Developer account and registered application
+- Snowflake account with a database containing track features
+- Docker installed locally
+
+### Environment Variables
+
+Configure these in your Lambda environment:
+
+```
 SPOTIFY_CLIENT_ID=your_client_id
 SPOTIFY_CLIENT_SECRET=your_client_secret
 SPOTIFY_REFRESH_TOKEN=your_refresh_token
+SPOTIFY_REDIRECT_URI=your_redirect_uri
 SPOTIFY_PLAYLIST_ID=your_playlist_id
+
 SNOWFLAKE_ACCOUNT=your_snowflake_account
 SNOWFLAKE_USER=your_username
 SNOWFLAKE_PASSWORD=your_password
+SNOWFLAKE_ROLE=your_role
 SNOWFLAKE_DATABASE=your_database
 SNOWFLAKE_SCHEMA=your_schema
 SNOWFLAKE_WAREHOUSE=your_warehouse
-SNS_TOPIC_ARN=arn:aws:sns:us-east-1:xxxx:spotify-alerts
+
+SNS_TOPIC_ARN=arn:aws:sns:region:account-id:topic-name
 ```
 
-## Scheduling & Alerts
+### Deployment Steps
 
-* Use **AWS EventBridge** to run the recommender daily (e.g., every morning at 8 AM).
-* Configure **SNS** with email subscriptions to receive run completion notifications.
+1. **Build the Docker image**:
+   ```bash
+   docker build -t spotify-recommender .
+   ```
 
-## Known Limitations
+2. **Push to Amazon ECR**:
+   ```bash
+   aws ecr create-repository --repository-name spotify-recommender
+   aws ecr get-login-password | docker login --username AWS --password-stdin <your-ecr-url>
+   docker tag spotify-recommender:latest <your-ecr-url>/spotify-recommender:latest
+   docker push <your-ecr-url>/spotify-recommender:latest
+   ```
 
-* Data consisting of songs has 10k entries limiting recommendations.
-* Data for recommendations is static.
+3. **Create Lambda Function**:
+   - Create a new Lambda function using the container image
+   - Set memory to at least 256MB and timeout to 30 seconds
+   - Configure environment variables
 
-## Notifications (SNS Email Setup)
+4. **Set up EventBridge**:
+   - Create a new rule that runs on a schedule
+   - Set the target to your Lambda function
 
-1. Create an SNS topic.
-2. Subscribe your email address and confirm the email.
-3. Attach a policy to the Lambda role allowing `sns:Publish` to your topic.
+5. **Configure SNS**:
+   - Create an SNS topic
+   - Add email subscriptions
+   - Confirm subscription emails
 
-## Setup Steps
+## How It Works
 
-```bash
-# Build & tag Docker image
-$ docker build -t spotify-recommender .
-$ docker tag spotify-recommender:latest <your-ecr-url>
+The recommendation system uses cosine similarity between audio features to find songs similar to what you've recently played. Features include danceability, energy, key, tempo, and more.
 
-# Authenticate & push
-$ aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin <your-ecr-url>
-$ docker push <your-ecr-url>
-```
+## Limitations
 
-Deploy the image to Lambda, set env variables, and connect with EventBridge for scheduled execution.
+- The recommendation database is limited to 10,000 songs
+- Static dataset (not continuously updated)
+- Requires manual refresh token management for Spotify API
 
-Happy listening! 🎶
+## License
+
+[MIT License](LICENSE)
